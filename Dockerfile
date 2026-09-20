@@ -1,6 +1,9 @@
 # Multi-stage Dockerfile for TaskBoard API
 FROM node:20-alpine AS builder
 
+# Install OpenSSL & libc compatibility required by Prisma on Alpine Linux
+RUN apk add --no-cache openssl libc6-compat
+
 WORKDIR /app
 
 # Copy dependency definitions
@@ -20,6 +23,9 @@ RUN npm run build
 
 # Production image
 FROM node:20-alpine AS runner
+
+# Install OpenSSL & libc compatibility for runtime
+RUN apk add --no-cache openssl libc6-compat
 
 WORKDIR /app
 
