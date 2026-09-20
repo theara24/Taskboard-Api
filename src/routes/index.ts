@@ -7,6 +7,8 @@ import commentRoutes from './comment.routes';
 import dashboardRoutes from './dashboard.routes';
 import notificationRoutes from './notification.routes';
 import invitationRoutes from './invitation.routes';
+import adminRoutes from './admin.routes';
+import supportRoutes from './support.routes';
 
 const router = Router();
 
@@ -18,5 +20,7 @@ router.use('/comments', commentRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/invitations', invitationRoutes);
+router.use('/admin', adminRoutes);
+router.use('/support', supportRoutes);
 
 export default router;

@@ -46,6 +46,10 @@ export class AuthService {
       { expiresIn: env.JWT_EXPIRES_IN as SignOptions['expiresIn'] },
     );
 
+    // Log platform activity
+    const { PlatformActivityService } = await import('./platform-activity.service');
+    await PlatformActivityService.log('USER_REGISTERED', `${user.name} registered on TaskBoard`, user.id);
+
     return { user, token };
   }
 

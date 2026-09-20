@@ -56,6 +56,14 @@ export class ProjectService {
         });
       }
 
+      const { PlatformActivityService } = await import('./platform-activity.service');
+      await PlatformActivityService.log(
+        'PROJECT_CREATED',
+        `Created new project "${project.name}" (${project.key})`,
+        userId,
+        { projectId: project.id, projectKey: project.key },
+      );
+
       return project;
     });
   }

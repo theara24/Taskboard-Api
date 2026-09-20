@@ -4,7 +4,8 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "linux-musl", "linux-musl-openssl-3.0.x"]
 }
 
 enum Role {
@@ -48,12 +49,45 @@ enum NotificationType {
   INVITATION_DECLINED
   ISSUE_ASSIGNED
   SYSTEM
+  SUPPORT_TICKET_CREATED
+  SUPPORT_TICKET_REPLY
+  SUPPORT_TICKET_STATUS_CHANGED
 }
 
 enum InvitationStatus {
   PENDING
   ACCEPTED
   DECLINED
+}
+
+enum SupportCategory {
+  ACCOUNT
+  AUTHENTICATION
+  PROJECT
+  BUG
+  OTHER
+}
+
+enum SupportPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum SupportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum PlatformActivityType {
+  USER_REGISTERED
+  PROJECT_CREATED
+  SUPPORT_TICKET_CREATED
+  SUPPORT_TICKET_RESOLVED
+  USER_ROLE_CHANGED
 }
 
 model User {
@@ -78,6 +112,9 @@ model User {
   notifications        Notification[]
   sentInvitations      ProjectInvitation[] @relation("InvitedBy")
   receivedInvitations  ProjectInvitation[] @relation("InvitedUser")
+  supportTickets       SupportTicket[]
+  supportTicketMessages SupportTicketMessage[]
+  platformActivities   PlatformActivity[]
 
   @@index([email])
   @@index([googleId])
@@ -235,4 +272,55 @@ model ProjectInvitation {
   @@index([projectId])
   @@index([inviteeEmail])
   @@index([inviteeId])
+}
+
+model SupportTicket {
+  id           String          @id @default(uuid())
+  ticketNumber Int             @unique @default(autoincrement())
+  ticketKey    String          @unique // e.g. "SUP-1"
+  userId       String
+  subject      String
+  description  String
+  category     SupportCategory @default(OTHER)
+  priority     SupportPriority @default(MEDIUM)
+  status       SupportStatus   @default(OPEN)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  resolvedAt   DateTime?
+
+  user     User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages SupportTicketMessage[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+  @@index([ticketKey])
+}
+
+model SupportTicketMessage {
+  id        String   @id @default(uuid())
+  ticketId  String
+  userId    String
+  message   String
+  createdAt DateTime @default(now())
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([userId])
+}
+
+model PlatformActivity {
+  id        String               @id @default(uuid())
+  type      PlatformActivityType
+  message   String
+  userId    String?
+  metadata  Json?
+  createdAt DateTime             @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
 }

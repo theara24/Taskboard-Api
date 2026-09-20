@@ -27,7 +27,11 @@ async function main() {
     });
     console.log(`✅ Created system administrator account: ${admin.email}`);
   } else {
-    console.log(`ℹ️ System administrator account already exists: ${existingAdmin.email}`);
+    await prisma.user.update({
+      where: { email: adminEmail },
+      data: { role: Role.ADMIN },
+    });
+    console.log(`ℹ️ System administrator account updated with ADMIN role: ${existingAdmin.email}`);
   }
 
   console.log('✨ Seeding complete. Zero dummy test data injected.');
