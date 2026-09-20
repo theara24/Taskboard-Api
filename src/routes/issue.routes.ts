@@ -4,7 +4,7 @@ import { CommentController } from '../controllers/comment.controller';
 import { LabelController } from '../controllers/label.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validate.middleware';
-import { getIssueSchema, updateIssueSchema } from '../validators/issue.validator';
+import { getIssueSchema, updateIssueSchema, listAllIssuesSchema } from '../validators/issue.validator';
 import { createCommentSchema } from '../validators/comment.validator';
 import { attachLabelSchema, detachLabelSchema } from '../validators/label.validator';
 
@@ -13,6 +13,7 @@ const router = Router();
 router.use(authenticate);
 
 // Issue operations
+router.get('/', validate(listAllIssuesSchema), IssueController.listAll);
 router.get('/:id', validate(getIssueSchema), IssueController.getById);
 router.patch('/:id', validate(updateIssueSchema), IssueController.update);
 router.delete('/:id', validate(getIssueSchema), IssueController.delete);

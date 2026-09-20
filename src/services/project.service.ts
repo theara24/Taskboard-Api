@@ -42,22 +42,45 @@ export class ProjectService {
         },
       });
 
+      // Seed standard labels for the new project if supported
+      if (tx.label?.createMany) {
+        await tx.label.createMany({
+          data: [
+            { name: 'frontend', projectId: project.id },
+            { name: 'backend', projectId: project.id },
+            { name: 'bug', projectId: project.id },
+            { name: 'feature', projectId: project.id },
+            { name: 'urgent', projectId: project.id },
+          ],
+          skipDuplicates: true,
+        });
+      }
+
       return project;
     });
   }
 
   static async listUserProjects(userId: string, role: Role) {
     // Admins see all projects; normal users see projects they own or are a member of
-    if (role === Role.ADMIN) {
-      return prisma.project.findMany({
+    const includeConfig = {
+      owner: {
+        select: { id: true, name: true, email: true, avatarUrl: true },
+      },
+      members: {
         include: {
-          owner: {
-            select: { id: true, name: true, email: true },
-          },
-          _count: {
-            select: { members: true, issues: true },
+          user: {
+            select: { id: true, name: true, email: true, role: true, avatarUrl: true },
           },
         },
+      },
+      _count: {
+        select: { members: true, issues: true },
+      },
+    };
+
+    if (role === Role.ADMIN) {
+      return prisma.project.findMany({
+        include: includeConfig,
         orderBy: { createdAt: 'desc' },
       });
     }
@@ -66,14 +89,7 @@ export class ProjectService {
       where: {
         OR: [{ ownerId: userId }, { members: { some: { userId } } }],
       },
-      include: {
-        owner: {
-          select: { id: true, name: true, email: true },
-        },
-        _count: {
-          select: { members: true, issues: true },
-        },
-      },
+      include: includeConfig,
       orderBy: { createdAt: 'desc' },
     });
   }

@@ -33,6 +33,7 @@ export const updateIssueSchema = z.object({
     priority: z.nativeEnum(IssuePriority).optional(),
     assigneeId: z.string().uuid('Invalid assignee ID format').nullable().optional(),
     dueDate: z.string().datetime().nullable().optional(),
+    labelIds: z.array(z.string().uuid('Invalid label ID format')).optional(),
   }),
 });
 
@@ -61,6 +62,24 @@ export const listProjectIssuesSchema = z.object({
   }),
 });
 
+export const listAllIssuesSchema = z.object({
+  query: z.object({
+    projectId: z.string().uuid('Invalid project ID format').optional(),
+    page: z.string().regex(/^\d+$/).optional(),
+    limit: z.string().regex(/^\d+$/).optional(),
+    status: z.nativeEnum(IssueStatus).optional(),
+    priority: z.nativeEnum(IssuePriority).optional(),
+    type: z.nativeEnum(IssueType).optional(),
+    assigneeId: z.string().uuid().optional(),
+    reporterId: z.string().uuid().optional(),
+    q: z.string().optional(),
+    search: z.string().optional(),
+    sortBy: z.enum(['createdAt', 'updatedAt', 'priority', 'dueDate', 'title']).optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional(),
+  }),
+});
+
 export type CreateIssueInput = z.infer<typeof createIssueSchema>['body'];
 export type UpdateIssueInput = z.infer<typeof updateIssueSchema>['body'];
 export type ListIssuesQuery = z.infer<typeof listProjectIssuesSchema>['query'];
+export type ListAllIssuesQuery = z.infer<typeof listAllIssuesSchema>['query'];

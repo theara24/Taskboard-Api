@@ -92,21 +92,36 @@ export class IssueService {
     });
   }
 
-  static async listIssues(projectId: string, query: ListIssuesQuery) {
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-    });
+  static async listIssues(
+    projectId?: string,
+    query: ListIssuesQuery = {},
+    userId?: string,
+    userRole?: string,
+  ) {
+    if (projectId) {
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+      });
 
-    if (!project) {
-      throw ApiError.notFound('Project not found', ErrorCode.PROJECT_NOT_FOUND);
+      if (!project) {
+        throw ApiError.notFound('Project not found', ErrorCode.PROJECT_NOT_FOUND);
+      }
     }
 
     const { page, limit, skip } = getPaginationParams(query.page, query.limit);
 
     // Build Prisma filter
-    const where: Prisma.IssueWhereInput = {
-      projectId,
-    };
+    const where: Prisma.IssueWhereInput = {};
+
+    if (projectId) {
+      where.projectId = projectId;
+    } else if (userId && userRole !== 'ADMIN') {
+      where.project = {
+        members: {
+          some: { userId },
+        },
+      };
+    }
 
     if (query.status) {
       where.status = query.status;
@@ -330,15 +345,34 @@ export class IssueService {
         },
       });
 
+      if (input.labelIds !== undefined && (tx as any).issueLabel?.deleteMany) {
+        await (tx as any).issueLabel.deleteMany({ where: { issueId } });
+        if (input.labelIds.length > 0) {
+          await (tx as any).issueLabel.createMany({
+            data: input.labelIds.map((labelId) => ({ issueId, labelId })),
+          });
+        }
+      }
+
       if (activitiesToCreate.length > 0) {
         await tx.activity.createMany({
           data: activitiesToCreate,
         });
       }
 
+      // Re-fetch or return with fresh labels
+      const finalIssue = await tx.issue.findUnique({
+        where: { id: issueId },
+        include: {
+          reporter: { select: { id: true, name: true, email: true } },
+          assignee: { select: { id: true, name: true, email: true } },
+          labels: { include: { label: true } },
+        },
+      });
+
       return {
-        ...updated,
-        labels: updated.labels.map((il) => il.label),
+        ...(finalIssue || updated),
+        labels: (finalIssue || updated).labels.map((il: any) => il.label || il),
       };
     });
   }

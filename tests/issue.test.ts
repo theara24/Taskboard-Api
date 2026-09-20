@@ -131,4 +131,33 @@ describe('Issue API (/api/v1/projects/:projectId/issues & /api/v1/issues)', () =
       expect(res.body.pagination.total).toBe(1);
     });
   });
+
+  describe('GET /api/v1/issues (Global & Filtered by projectId query)', () => {
+    it('should return issues across projects or with projectId query param', async () => {
+      (prisma.project.findUnique as jest.Mock).mockResolvedValue({
+        id: projectId,
+        ownerId: userId,
+        members: [{ userId }],
+      });
+
+      (prisma.issue.findMany as jest.Mock).mockResolvedValue([
+        {
+          id: 'issue-1',
+          issueKey: 'TASK-1',
+          title: 'First Task',
+          labels: [],
+        },
+      ]);
+      (prisma.issue.count as jest.Mock).mockResolvedValue(1);
+
+      const res = await request(app)
+        .get(`/api/v1/issues?projectId=${projectId}&limit=100`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toBeInstanceOf(Array);
+      expect(res.body.pagination).toBeDefined();
+    });
+  });
 });

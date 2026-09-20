@@ -25,6 +25,21 @@ export class IssueController {
     }
   }
 
+  static async listAll(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const projectId = (req.query.projectId as string) || undefined;
+      const { issues, pagination } = await IssueService.listIssues(
+        projectId,
+        req.query,
+        req.user?.id,
+        req.user?.role,
+      );
+      ApiResponse.paginated(res, issues, pagination, 'Issues retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const issue = await IssueService.getIssueByIdOrKey(req.params.id);

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { ProjectController } from '../controllers/project.controller';
 import { IssueController } from '../controllers/issue.controller';
 import { LabelController } from '../controllers/label.controller';
+import { InvitationController } from '../controllers/invitation.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { requireProjectMember, requireProjectOwner } from '../middleware/project.middleware';
 import { validate } from '../middleware/validate.middleware';
@@ -14,6 +15,7 @@ import {
 } from '../validators/project.validator';
 import { createIssueSchema, listProjectIssuesSchema } from '../validators/issue.validator';
 import { createLabelSchema } from '../validators/label.validator';
+import { inviteMemberSchema } from '../validators/invitation.validator';
 
 const router = Router();
 
@@ -44,6 +46,25 @@ router.delete(
   validate(removeProjectMemberSchema),
   requireProjectOwner,
   ProjectController.removeMember,
+);
+
+// Project Invitations
+router.post(
+  '/:id/invitations',
+  validate(inviteMemberSchema),
+  requireProjectOwner,
+  InvitationController.invite,
+);
+router.get(
+  '/:id/invitations',
+  validate(getProjectSchema),
+  requireProjectOwner,
+  InvitationController.listByProject,
+);
+router.delete(
+  '/:id/invitations/:invitationId',
+  requireProjectOwner,
+  InvitationController.revoke,
 );
 
 // Project Issues

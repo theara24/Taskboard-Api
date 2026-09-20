@@ -15,7 +15,18 @@ const app: Application = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (
+        env.CORS_ORIGIN === '*' ||
+        origin === env.FRONTEND_URL ||
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://127.0.0.1:')
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Permissive for university demo
+    },
     credentials: true,
   }),
 );
